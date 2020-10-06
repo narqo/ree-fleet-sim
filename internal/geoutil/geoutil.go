@@ -7,14 +7,19 @@ import (
 
 const (
 	rad = math.Pi / 180
-	// Earth radius, km
+	// Earth radius in km
 	earthKm = 6371
 )
 
 // Distance calculates haversine distance between two Lat, Lon coordinates.
 // Refer to https://stackoverflow.com/questions/365826/calculate-distance-between-2-gps-coordinates
 func Distance(lat0, lon0, lat1, lon1 float64) float64 {
-	a := 0.5 - math.Cos((lat1-lat0)*rad)/2 + math.Cos(lat0*rad)*math.Cos(lat1*rad)*(1-math.Cos((lon1-lon0)*rad))/2
+	// convert degrees to radians
+	dlat := (lat1 - lat0) * rad
+	dlon := (lon1 - lon0) * rad
+	lat0 = lat0 * rad
+	lat1 = lat1 * rad
+	a := 0.5 - math.Cos(dlat)/2 + math.Cos(lat0)*math.Cos(lat1)*(1-math.Cos(dlon))/2
 	return 2 * earthKm * math.Asin(math.Sqrt(a))
 }
 

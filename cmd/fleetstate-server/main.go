@@ -45,17 +45,15 @@ func run(ctx context.Context, args []string) error {
 		return err
 	}
 
+	mux := http.NewServeMux()
+
 	store := fleetstate.NewMemStore()
 	vh := fleetstate.NewVehicleHandler(store)
-
-	mux := http.NewServeMux()
 	mux.Handle("/vehicle/", http.StripPrefix("/vehicle", vh.Handler()))
-
-	handler := middleware.LoggingHandler(os.Stdout, mux)
 
 	server := &http.Server{
 		Addr:    httpAddr,
-		Handler: handler,
+		Handler: middleware.LoggingHandler(os.Stdout, mux),
 	}
 
 	errs := make(chan error, 1)

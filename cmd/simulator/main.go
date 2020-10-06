@@ -46,8 +46,8 @@ func run(ctx context.Context, args []string) error {
 	)
 	flags.StringVar(&fleetStateAddr, "fleetstate-server-addr", "http://127.0.0.1:10080", "address of fleetstate server")
 	flags.IntVar(&vehiclesTotal, "vehicles-total", 20, "total number of vehicles to simulate")
-	flags.DurationVar(&tickInterval, "vehicle-tick-interval", time.Second, "interval a vehicle sends an update to fleetstate server")
-	flags.Float64Var(&maxDistancePerTick, "vehicle-max-distance-per-tick", 13, "max distance in meters a vehicle moves per pick")
+	flags.DurationVar(&tickInterval, "vehicle-tick-interval", time.Second, "interval a vehicle sends an update to server")
+	flags.Float64Var(&maxDistancePerTick, "vehicle-max-distance-per-tick", 13, "max distance in meters a vehicle moves per tick")
 
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -68,14 +68,19 @@ func run(ctx context.Context, args []string) error {
 		go func(vc *vehicle.Vehicle) {
 			defer wg.Done()
 
-			vc.ReportPosition(ctx)
+			if err := vc.ReportPosition(ctx); err != nil {
+				log.Printf("failed to report position for %s: %s", vc, err)
+			}
 
 			ticker := time.NewTicker(tickInterval)
 			for {
 				select {
 				case <-ticker.C:
 					vc.MoveNearby(rand.Float64() * maxDistancePerTick)
-					vc.ReportPosition(ctx)
+
+					if err := vc.ReportPosition(ctx); err != nil {
+						log.Printf("failed to report position for %s: %s", vc, err)
+					}
 				case <-ctx.Done():
 					return
 				}
